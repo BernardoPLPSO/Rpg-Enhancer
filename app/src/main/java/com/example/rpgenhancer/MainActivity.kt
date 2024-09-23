@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.rpgenhancer.data.model.SpellDto
 import com.example.rpgenhancer.data.model.UserState
 import com.example.rpgenhancer.ui.theme.RpgEnhancerTheme
 import com.example.rpgenhancer.utils.generateQRCode
@@ -69,14 +70,17 @@ class MainActivity : ComponentActivity() {
             val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
             if (result != null) {
                 if (result.contents != null) {
-                    val parts = result.contents.split("|")
-                    if (parts.size == 2){
-                        val scannedUrl = parts[0]
-                        val scannedInfo = parts[1]
-                        Toast.makeText(this, "Scanned description: $scannedInfo", Toast.LENGTH_LONG).show()
-                        sharedViewModel.updateSoundUrl(scannedUrl)
-                        sharedViewModel.updateSpellDescription(scannedInfo)
-                    }
+                    Toast.makeText(this, "Scanned: ${result.contents}", Toast.LENGTH_LONG).show()
+                    sharedViewModel.updateId(result.contents.toLong())
+                    sharedViewModel.updateSpellLoaded(false)
+//                    val parts = result.contents.split("|")
+//                    if (parts.size == 2){
+//                        val scannedUrl = parts[0]
+//                        val scannedInfo = parts[1]
+//                        Toast.makeText(this, "Scanned description: $scannedInfo", Toast.LENGTH_LONG).show()
+////                        sharedViewModel.updateSoundUrl(scannedUrl)
+////                        sharedViewModel.updateSpellDescription(scannedInfo)
+//                    }
 
 
                     // Update the soundUrl in the ViewModel
@@ -99,6 +103,8 @@ fun MainScreen(
     val mediaPlayer = MediaPlayer()
     val soundUrl by sharedViewModel.soundUrl// Collect soundUrl from ViewModel
     val spellDescription by sharedViewModel.spellDescription
+    val imageUrl by sharedViewModel.imageUrl
+    val spellId by sharedViewModel.id
 
 
     var currentUserState by remember { mutableStateOf("") }
@@ -107,11 +113,8 @@ fun MainScreen(
         mutableStateOf<Uri?>(null)
     }
 
-    var imageUrl by remember {
-        mutableStateOf("")
-    }
-
     var isPlaying by remember { mutableStateOf(false) }
+    var spell by remember { mutableStateOf<SpellDto?>(null) }
 
 
     var publicUrls by remember { mutableStateOf<List<String>>(emptyList()) } // State for holding public URLs
@@ -146,6 +149,23 @@ fun MainScreen(
 //                    Text(text = "Upload Sound")
 //                }
 //        }
+//        Button(onClick = { viewModel.getSpell(1){
+//            spell = it
+//        } }) {
+//            Text(text = "Get From Table")
+//        }
+
+        if(spellId > 0L && !sharedViewModel.isSpellLoaded.value){
+            viewModel.getSpell(spellId) {
+                spell = it
+                sharedViewModel.loadSpellOnce(spell)
+            }
+        }
+
+        spell?.let {
+            Text(text = "Spell id: ${it.id} \n| Spell description: ${it.description} " +
+                    "\n| Spell audio url: ${it.audioUrl} \n| Spell image url: ${it.imageUrl}")
+        }
 
         Button(onClick = { viewModel.readPublicFile("sounds","soundtest", "mp3"){
             sharedViewModel.updateSoundUrl(it)
@@ -182,7 +202,7 @@ fun MainScreen(
         }
 
         Button(onClick = {
-            qrCodeBitmap = generateQRCode(soundUrl, "description123")
+            qrCodeBitmap = generateQRCode(1L)
         }) {
             Text(text = "Generate QR Code")
         }

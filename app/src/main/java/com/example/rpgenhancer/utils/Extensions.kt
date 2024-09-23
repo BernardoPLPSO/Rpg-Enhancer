@@ -54,13 +54,13 @@ fun playAudioFromUrl(mediaPlayer: MediaPlayer, url: String, onCompletion: () -> 
     }
 }
 
-fun generateQRCode(url: String, additionalInfo: String): Bitmap? {
+fun generateQRCode(spellId: Long): Bitmap? {
     // Concatenate the URL and additional info
-    val qrData = "$url|$additionalInfo"
+//    val qrData = "$url|$additionalInfo"
 
     return try {
         val bitMatrix: BitMatrix = MultiFormatWriter().encode(
-            qrData,
+            spellId.toString(),
             BarcodeFormat.QR_CODE,
             600,
             600
